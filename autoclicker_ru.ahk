@@ -197,51 +197,30 @@ return
 
 #if toggle
 ~*$LButton::
-    prevDelay := 0
-    consecutiveFastClicks := 0
     clickCounter := 0
     startTime := A_TickCount
     while (toggle && GetKeyState("LButton","Physical"))
     {
         Click
         clickCounter++
-        elapsed := A_TickCount - startTime
-        clicksPerSecond := clickCounter / (elapsed / 1000)
+
+        ; === рассчитываем CPS из ползунков ===
+        Random, cps, %minCPS%, %maxCPS%
+        delay := 1000 / cps   ; задержка в мс
+
+        ; небольшой разброс для "человечности"
+        Random, jitter, -5, 5
+        delay += jitter
+        if (delay < 1)
+            delay := 1
+
+        ; шанс рандомных движений мыши
         Random, movementChance, 1, 100
-        if (clicksPerSecond > 15 || RandomClickDelay())
-        {
-            Random, delay, 30, 40
-            if (movementChance <= movementChancePercentage)
-                RandomMouseMovement()
-            Sleep, delay
-            if (movementChance <= movementChancePercentage)
-                RandomMouseMovement()
-        }
-        else if (Mod(clickCounter, 3) = 0)
-        {
-            Random, delay, 10, 35
-            Sleep, delay
-        }
-        else if (Mod(clickCounter, 5) = 0)
-        {
-            Random, delay, 10, 70
-            if (delay > 40)
-                Random, delay, 40, 80
-            Sleep, delay
-        }
-        else
-        {
-            Sleep, 60
-        }
-        prevDelay := delay
-        if (delay < 55)
-            consecutiveFastClicks++
-        else
-            consecutiveFastClicks := 0
+        if (movementChance <= movementChancePercentage)
+            RandomMouseMovement()
+
+        Sleep, delay
     }
-    prevDelay := 0
-    consecutiveFastClicks := 0
-    clickCounter := 0
 return
 #if
 
@@ -290,3 +269,4 @@ RandomMouseMovement()
     targetY := startY + offsetY
     DllCall("mouse_event", "uint", 0x0001, "int", targetX - startX, "int", targetY - startY, "uint", 0, "int", 0)
 }
+
